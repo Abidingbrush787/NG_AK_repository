@@ -1,4 +1,4 @@
-using UPojazd;
+using KlasaPojazd;
 
 namespace TestPojazdClass
 {
@@ -12,13 +12,13 @@ namespace TestPojazdClass
             void Opis_ZwracaPoprawnyOpisPojazdu()
             {
                 // Arrange
-                var pojazd = new Pojazd("Samochód", 120);
+                var pojazd = new Pojazd("SamochÃ³d", 120);
 
                 // Act
                 var opis = pojazd.Opis();
 
                 // Assert
-                Assert.AreEqual("Pojazd Samochód mo¿e jechaæ z maksymaln¹ prêdkoœci¹ 120 km/h.", opis);
+                Assert.AreEqual("Pojazd SamochÃ³d moÅ¼e jechaÄ‡ z maksymalnÄ… prÄ™dkoÅ›ciÄ… 120 km/h.", opis);
             }
         }
 
@@ -35,7 +35,7 @@ namespace TestPojazdClass
                 var opis = samochod.Opis();
 
                 // Assert
-                Assert.AreEqual("Pojazd Sedan mo¿e jechaæ z maksymaln¹ prêdkoœci¹ 180 km/h. Ma 4 drzwi.", opis);
+                Assert.AreEqual("Pojazd Sedan moÅ¼e jechaÄ‡ z maksymalnÄ… prÄ™dkoÅ›ciÄ… 180 km/h. Ma 4 drzwi.", opis);
             }
         }
     }
