@@ -22,8 +22,31 @@ namespace Data_Layer
             VelocityY = velocityY;
             Radius = radius;
             this.Color = color;
+        }   
+    }
+
+    public class BallRepository : IBallRepository
+    {
+        public List<Ball> balls = new List<Ball>();
+
+        public void AddBall(Ball ball) 
+        {
+            balls.Add(ball); 
         }
 
-        
+        public void RemoveBall(Ball ball)
+        {
+            balls.Remove(ball);
+        }
+
+        public List<Ball> GetAllBalls()
+        {
+            return balls;
+        }
+
+        public void RemoveAllBalls()
+        {
+            balls.Clear();
+        }
     }
 }

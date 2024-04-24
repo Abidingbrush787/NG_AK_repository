@@ -12,7 +12,8 @@ namespace Logic_Layer_Tests
     [TestFixture]
     public class BallServiceTests
     {
-        public Ball_Service _ballService;
+        public BallService _ballService;
+        public BallRepository _ballRepository = new BallRepository();
         private double _canvasWidth = 800;
         private double _canvasHeight = 600;
 
@@ -20,7 +21,7 @@ namespace Logic_Layer_Tests
         [SetUp]
         public void Setup()
         {
-            _ballService = new Ball_Service(_canvasWidth, _canvasHeight);
+            _ballService = new BallService(_canvasWidth, _canvasHeight, _ballRepository);
         }
 
         [Test]
@@ -58,7 +59,7 @@ namespace Logic_Layer_Tests
         public void CHeck_Ball_List()
         {
             var ball = _ballService.CreateBall();
-            var BallList = _ballService.balls;
+            var BallList = _ballRepository.balls;
 
             Assert.That(BallList.Count(), Is.GreaterThan(0));
         }

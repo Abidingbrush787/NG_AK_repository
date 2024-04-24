@@ -25,11 +25,6 @@ namespace Logic_Layer.Interfaces
         void UpdateBallPositions(double timeFactor);
 
         /// <summary>
-        /// Usuwa wszystkie kulki z kolekcji.
-        /// </summary>
-        void ClearBalls();
-
-        /// <summary>
         /// Zwraca kolekcję wszystkich kulek.
         /// </summary>
         /// <returns>Kolekcja kulek.</returns>

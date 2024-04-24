@@ -1,0 +1,52 @@
+﻿<Window x:Class="TPW_Projekt.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:TPW_Projekt.ViewModel"
+        xmlns:helpers="clr-namespace:TPW_Projekt.Helpers"
+        Title="MainWindow" Height="500" Width="800">
+
+    <Window.Resources>
+        <helpers:RadiusToDiameterConverter x:Key="RadiusToDiameterConverter"/>
+        <helpers:ColorToBrushConverter x:Key="ColorToBrushConverter"/>
+    </Window.Resources>
+
+    <Window.DataContext>
+        <vm:MainViewModel />
+    </Window.DataContext>
+
+    <Grid x:Name="mainGrid">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10">
+            <TextBox Width="100" Margin="10" Text="{Binding NumberOfBalls, UpdateSourceTrigger=PropertyChanged}"/>
+            <Button Content="Generuj kule" Command="{Binding GenerateBallsCommand}" Margin="5"/>
+            <Button Content="Rozpocznij ruch" Command="{Binding StartMovingBallsCommand}" Margin="5"/>
+        </StackPanel>
+
+        <ItemsControl ItemsSource="{Binding Balls}" Grid.Row="1">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <Canvas Background="Black" ClipToBounds="True"
+                             Width="{Binding CanvasWidth}"
+                             Height="{Binding CanvasHeight}"/>
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemContainerStyle>
+                <Style TargetType="ContentPresenter">
+                    <Setter Property="Canvas.Left" Value="{Binding X}"/>
+                    <Setter Property="Canvas.Top" Value="{Binding Y}"/>
+                </Style>
+            </ItemsControl.ItemContainerStyle>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <Ellipse Fill="{Binding Color, Converter={StaticResource ColorToBrushConverter}}"
+                             Width="{Binding Radius, Converter={StaticResource RadiusToDiameterConverter}}"
+                             Height="{Binding Radius, Converter={StaticResource RadiusToDiameterConverter}}"/>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+    </Grid>
+</Window>
