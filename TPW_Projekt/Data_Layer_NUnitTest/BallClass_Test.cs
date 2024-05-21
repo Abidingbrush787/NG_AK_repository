@@ -13,8 +13,9 @@ namespace Data_Layer_NUnitTest
             static double velocityY = 1;
             static double radius = 10;
             static Color color = ColorsDefinitions.Blue;
+            static double mass = 10;
 
-            Ball ball = new Ball(x, y, velocityX, velocityY, radius, color);
+            Ball ball = new Ball(x, y, velocityX, velocityY, radius, color, mass);
         
 
         [Test]
@@ -26,6 +27,8 @@ namespace Data_Layer_NUnitTest
             Assert.That(ball.VelocityY, Is.EqualTo(velocityY));
             Assert.That(ball.Radius, Is.EqualTo(radius));
             Assert.That(ball.Color, Is.EqualTo(color));
+            Assert.That(ball.Mass, Is.EqualTo(mass));
+
 
         }
     }

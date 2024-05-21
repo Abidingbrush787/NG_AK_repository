@@ -9,7 +9,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Data_Layer\Data_Layer.csproj" />
+    <Page Include="App.xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Logic_Layer\Logic_Layer.csproj" />
   </ItemGroup>
 

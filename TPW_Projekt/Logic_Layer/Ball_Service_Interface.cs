@@ -7,7 +7,6 @@ using System.Windows.Media;
 
 using Data_Layer;
 
-
 namespace Logic_Layer.Interfaces
 {
     public interface IBallService
@@ -22,19 +21,24 @@ namespace Logic_Layer.Interfaces
         /// Aktualizuje pozycje wszystkich kulek w zależności od czynnika czasu.
         /// </summary>
         /// <param name="timeFactor">Czynnik czasu wpływający na przesunięcie.</param>
-        void UpdateBallPositions(double timeFactor);
-
-        /// <summary>
-        /// Usuwa wszystkie kulki z kolekcji.
-        /// </summary>
-        void ClearBalls();
+        Task UpdateBallPositions(double timeFactor);
 
         /// <summary>
         /// Zwraca kolekcję wszystkich kulek.
         /// </summary>
         /// <returns>Kolekcja kulek.</returns>
         IEnumerable<Ball> GetAllBalls();
+
+        /// <summary>
+        /// Usuwa wszystkie kule z listy.
+        /// </summary>
+        void ClearBalls();
+
+        /// <summary>
+        /// Ustawia rozmiar obszaru, w którym poruszają się kule.
+        /// </summary>
+        /// <param name="width">Szerokość obszaru.</param>
+        /// <param name="height">Wysokość obszaru.</param>
+        void SetCanvasSize(double width, double height);
     }
 }
-
- 

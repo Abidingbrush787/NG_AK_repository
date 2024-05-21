@@ -1,89 +1,174 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using System.Windows.Media;
 using Data_Layer;
 using Logic_Layer.Interfaces;
 
-
-
 namespace Logic_Layer
 {
-    public class Ball_Service : IBallService
+    public class BallService : IBallService
     {
-        public List<Ball> balls = new List<Ball>();
-        private Random random = new Random();
-        private readonly double canvasWidth;
-        private readonly double canvasHeight;
+        private readonly IBallRepository _ballsRepository;
+        private readonly Random _random = new Random();
+        private double _canvasWidth;
+        private double _canvasHeight;
+        private Boundary _boundary;
+        private List<Task> _tasks = new List<Task>(); // Dodajemy listê zadañ
 
-        public Color[] D_colors = new Color[] {
-                ColorsDefinitions.Red,
-                ColorsDefinitions.Green,
-                ColorsDefinitions.Blue,
-                ColorsDefinitions.Yellow,
-                ColorsDefinitions.Orange,
-                ColorsDefinitions.Purple,
-                ColorsDefinitions.Cyan,
-                ColorsDefinitions.Magenta
-            };
-
-
-        public Ball_Service(double canvasWidth, double canvasHeight)
+        public Color[] D_colors = new Color[]
         {
-            this.canvasWidth = canvasWidth;
-            this.canvasHeight = canvasHeight;
+            Colors.Red,
+            Colors.Green,
+            Colors.Blue,
+            Colors.Yellow,
+            Colors.Orange,
+            Colors.Purple,
+            Colors.Cyan,
+            Colors.Magenta
+        };
+
+        public BallService(Boundary boundary, IBallRepository ballsRepository)
+        {
+            _boundary = boundary ?? throw new ArgumentNullException(nameof(boundary));
+            _ballsRepository = ballsRepository ?? throw new ArgumentNullException(nameof(ballsRepository));
         }
 
         public Ball CreateBall()
         {
-            double x = random.NextDouble() * canvasWidth;
-            double y = random.NextDouble() * canvasHeight;
-            double velocityX = random.NextDouble() * 2 - 1; // Prêdkoœæ w zakresie -1 do 1
-            double velocityY = random.NextDouble() * 2 - 1;
             double radius = 10; // Sta³y promieñ
+            double x = _random.NextDouble() * (_boundary.Width - 2 * radius) + radius;
+            double y = _random.NextDouble() * (_boundary.Height - 2 * radius) + radius;
+            double mass = _random.NextDouble() * 3;
+            double velocityX = (_random.NextDouble() * 2 - 1) / mass; // Prêdkoœæ w zakresie -1 do 1 podzielona przez masê
+            double velocityY = (_random.NextDouble() * 2 - 1) / mass; // Prêdkoœæ w zakresie -1 do 1 podzielona przez masê
             Color color = GetRandomColor(); // Losowy kolor
 
-            Ball ball = new Ball(x, y, velocityX, velocityY, radius, color);
-            balls.Add(ball);
+            Ball ball = new Ball(x, y, velocityX, velocityY, radius, color, mass);
+            _ballsRepository.AddBall(ball);
             return ball;
         }
 
-        public void UpdateBallPositions(double timeFactor)
+        private bool _isUpdating = false;
+
+        public async Task UpdateBallPositions(double timeFactor)
         {
-            foreach (var ball in balls)
+            _isUpdating = true;
+            _tasks.Clear(); // Resetujemy listê zadañ na pocz¹tku ka¿dej aktualizacji
+
+            foreach (var ball in _ballsRepository.GetAllBalls())
             {
-                ball.X += ball.VelocityX * timeFactor;
-                ball.Y += ball.VelocityY * timeFactor;
-                CheckCollisionWithBounds(ball);
+                _tasks.Add(Task.Run(() =>
+                {
+                    ball.X += ball.VelocityX * timeFactor;
+                    ball.Y += ball.VelocityY * timeFactor;
+                    CheckCollisionWithBounds(ball);
+
+                    // SprawdŸ zderzenia z innymi kulkami...
+                    foreach (var otherBall in _ballsRepository.GetAllBalls())
+                    {
+                        if (otherBall != ball && IsCollision(ball, otherBall))
+                        {
+                            // Sekcja krytyczna: aktualizuj prêdkoœci po zderzeniu...
+                            lock (ball)
+                            {
+                                lock (otherBall)
+                                {
+                                    HandleCollision(ball, otherBall);
+                                }
+                            }
+                        }
+                    }
+                }));
             }
+
+            await Task.WhenAll(_tasks);
+
+            _isUpdating = false;
         }
 
-        public void ClearBalls()  //na razie nie potrzebne
+        public void ClearBalls()
         {
-            balls.Clear();
+            while (_isUpdating)
+            {
+                // Czekaj, a¿ aktualizacja pozycji kul zostanie zakoñczona
+            }
+
+            _ballsRepository.RemoveAllBalls();
+            _tasks.Clear(); // Resetujemy listê zadañ po usuniêciu wszystkich kulek
         }
 
         public IEnumerable<Ball> GetAllBalls()
         {
-            return balls;
+            return _ballsRepository.GetAllBalls();
         }
 
         private void CheckCollisionWithBounds(Ball ball)
         {
-            if (ball.X - ball.Radius < 0 || ball.X + ball.Radius > canvasWidth)
+            double margin = ball.Radius; // Dodajemy margines równy promieniowi kuli
+
+            if (ball.X - ball.Radius < _boundary.X || ball.X + ball.Radius > _boundary.X + _boundary.Width - 2 * margin)
             {
                 ball.VelocityX = -ball.VelocityX;
             }
-            if (ball.Y - ball.Radius < 0 || ball.Y + ball.Radius > canvasHeight)
+
+            if (ball.Y - ball.Radius < _boundary.Y || ball.Y + ball.Radius > _boundary.Y + _boundary.Height - 2 * margin)
             {
                 ball.VelocityY = -ball.VelocityY;
             }
         }
 
+        public void SetCanvasSize(double width, double height)
+        {
+            _canvasWidth = width;
+            _canvasHeight = height;
+        }
+
         private Color GetRandomColor()
         {
-           
+            return D_colors[_random.Next(D_colors.Length)];
+        }
 
-            return D_colors[random.Next(D_colors.Length)];
+        private bool IsCollision(Ball ball1, Ball ball2)
+        {
+            double dx = ball1.X - ball2.X;
+            double dy = ball1.Y - ball2.Y;
+            double distance = Math.Sqrt(dx * dx + dy * dy);
+            return distance < ball1.Radius + ball2.Radius;
+        }
+
+        private void HandleCollision(Ball ball1, Ball ball2)
+        {
+            // Oblicz ró¿nicê w pozycjach
+            double dx = ball1.X - ball2.X;
+            double dy = ball1.Y - ball2.Y;
+
+            // Oblicz odleg³oœæ miêdzy kulkami
+            double distance = Math.Sqrt(dx * dx + dy * dy);
+
+            // SprawdŸ, czy kule siê zderzaj¹
+            if (distance < ball1.Radius + ball2.Radius)
+            {
+                // Oblicz wektor normalny
+                double nx = dx / distance;
+                double ny = dy / distance;
+
+                // Oblicz sk³adow¹ prêdkoœci wzd³u¿ wektora normalnego (prêdkoœæ wzglêdna)
+                double p = 2 * (ball1.VelocityX * nx + ball1.VelocityY * ny - ball2.VelocityX * nx - ball2.VelocityY * ny) / (ball1.Mass + ball2.Mass);
+
+                // Zaktualizuj prêdkoœci kulek
+                ball1.VelocityX -= p * ball2.Mass * nx;
+                ball1.VelocityY -= p * ball2.Mass * ny;
+                ball2.VelocityX += p * ball1.Mass * nx;
+                ball2.VelocityY += p * ball1.Mass * ny;
+
+                // Korekta pozycji, aby zapobiec przenikaniu
+                double overlap = 0.5 * (distance - ball1.Radius - ball2.Radius);
+                ball1.X -= overlap * nx;
+                ball1.Y -= overlap * ny;
+                ball2.X += overlap * nx;
+                ball2.Y += overlap * ny;
+            }
         }
     }
 }
