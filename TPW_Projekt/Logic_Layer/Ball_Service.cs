@@ -34,17 +34,21 @@ namespace Logic_Layer
             _ballsRepository = ballsRepository ?? throw new ArgumentNullException(nameof(ballsRepository));
         }
 
+        private int _nextBallId = 0;
+
         public Ball CreateBall()
         {
             double radius = 10; // Sta³y promieñ
-            double x = _random.NextDouble() * (_boundary.Width - 2 * radius) + radius;
-            double y = _random.NextDouble() * (_boundary.Height - 2 * radius) + radius;
-            double mass = _random.NextDouble() * 3;
+            double margin = 20; // Dodajemy margines
+            double x = _random.NextDouble() * (_boundary.Width - 2 * radius - 2 * margin) + radius + margin;
+            double y = _random.NextDouble() * (_boundary.Height - 2 * radius - 2 * margin) + radius + margin;
+            double mass = (_random.NextDouble()) + 1;
             double velocityX = (_random.NextDouble() * 2 - 1) / mass; // Prêdkoœæ w zakresie -1 do 1 podzielona przez masê
             double velocityY = (_random.NextDouble() * 2 - 1) / mass; // Prêdkoœæ w zakresie -1 do 1 podzielona przez masê
             Color color = GetRandomColor(); // Losowy kolor
 
             Ball ball = new Ball(x, y, velocityX, velocityY, radius, color, mass);
+            ball.Id = _nextBallId++;
             _ballsRepository.AddBall(ball);
             return ball;
         }
@@ -56,7 +60,9 @@ namespace Logic_Layer
             _isUpdating = true;
             _tasks.Clear(); // Resetujemy listê zadañ na pocz¹tku ka¿dej aktualizacji
 
-            foreach (var ball in _ballsRepository.GetAllBalls())
+            var allBalls = _ballsRepository.GetAllBalls().OrderBy(ball => ball.Id).ToList();
+
+            foreach (var ball in allBalls)
             {
                 _tasks.Add(Task.Run(() =>
                 {
@@ -65,16 +71,29 @@ namespace Logic_Layer
                     CheckCollisionWithBounds(ball);
 
                     // SprawdŸ zderzenia z innymi kulkami...
-                    foreach (var otherBall in _ballsRepository.GetAllBalls())
+                    foreach (var otherBall in allBalls)
                     {
                         if (otherBall != ball && IsCollision(ball, otherBall))
                         {
                             // Sekcja krytyczna: aktualizuj prêdkoœci po zderzeniu...
-                            lock (ball)
+                            if (ball.Id < otherBall.Id)
+                            {
+                                lock (ball)
+                                {
+                                    lock (otherBall)
+                                    {
+                                        HandleCollision(ball, otherBall);
+                                    }
+                                }
+                            }
+                            else
                             {
                                 lock (otherBall)
                                 {
-                                    HandleCollision(ball, otherBall);
+                                    lock (ball)
+                                    {
+                                        HandleCollision(ball, otherBall);
+                                    }
                                 }
                             }
                         }
@@ -86,6 +105,7 @@ namespace Logic_Layer
 
             _isUpdating = false;
         }
+
 
         public void ClearBalls()
         {
