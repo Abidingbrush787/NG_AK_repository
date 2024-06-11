@@ -13,27 +13,27 @@ namespace TPW_Projekt.ViewModel
 {
     public class MainViewModel : ViewModelBase
     {
-            private BallService _ballService;
-            private bool _isMoving = false;
-            public Boundary Boundary { get; set; }
+        private BallService _ballService;
+        private bool _isMoving = false;
+        public Boundary Boundary { get; set; }
 
-            public ObservableCollection<BallViewModel> Balls { get; }
+        public ObservableCollection<BallViewModel> Balls { get; }
 
-            public ICommand GenerateBallsCommand { get; }
-            public ICommand StartMovingBallsCommand { get; }
+        public ICommand GenerateBallsCommand { get; }
+        public ICommand StartMovingBallsCommand { get; }
 
-            public MainViewModel()
-            {
-                Boundary = new Boundary(0, 0, 800, 500, Colors.White);
-                _ballService = new BallService(Boundary, new BallRepository());
-                Balls = new ObservableCollection<BallViewModel>();
+        private Logger _logger; // Dodajemy pole Logger
 
-                GenerateBallsCommand = new RelayCommand(_ => GenerateBalls());
-                StartMovingBallsCommand = new RelayCommand(_ => ToggleBallsMovement());
-            }
+        public MainViewModel()
+        {
+            Boundary = new Boundary(200, 125, 800, 500, Colors.White);
+            _logger = new Logger(); // Inicjalizujemy Logger
+            _ballService = new BallService(Boundary, new BallRepository(), _logger);
+            Balls = new ObservableCollection<BallViewModel>();
 
-            
-
+            GenerateBallsCommand = new RelayCommand(_ => GenerateBalls());
+            StartMovingBallsCommand = new RelayCommand(_ => ToggleBallsMovement());
+        }
 
         private void GenerateBalls()
         {
@@ -44,64 +44,62 @@ namespace TPW_Projekt.ViewModel
                 Ball newBall = _ballService.CreateBall();
                 Balls.Add(new BallViewModel(newBall)); // Tworzy nowy ViewModel dla kuli i dodaje do kolekcji
                 System.Diagnostics.Debug.WriteLine($"Created Ball : {Balls[i].X} , {Balls[i].Y}, {Balls[i].Color}");
-
             }
         }
 
-            private int? _numberOfBalls;
-            public int? NumberOfBalls
+        private int? _numberOfBalls;
+        public int? NumberOfBalls
+        {
+            get => _numberOfBalls;
+            set
             {
-                get => _numberOfBalls;
-                set
+                if (value < 0 || value >= 100)
                 {
-                    if (value < 0 || value >= 16)
-                    {
-                        MessageBox.Show("Liczba kul musi być między 0 a 16.", "Nieprawidłowa wartość", MessageBoxButton.OK, MessageBoxImage.Warning);
-                        return;
-                    }
+                    MessageBox.Show("Liczba kul musi być między 0 a 100.", "Nieprawidłowa wartość", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
 
-                    if (_numberOfBalls != value)
-                    {
-                        _numberOfBalls = value;
-                        OnPropertyChanged(nameof(NumberOfBalls));
-                    }
+                if (_numberOfBalls != value)
+                {
+                    _numberOfBalls = value;
+                    OnPropertyChanged(nameof(NumberOfBalls));
                 }
             }
+        }
 
-            private void ToggleBallsMovement()
+        private void ToggleBallsMovement()
+        {
+            _isMoving = !_isMoving;
+
+            if (_isMoving)
             {
-                _isMoving = !_isMoving;
-
-                if (_isMoving)
-                {
-                    System.Diagnostics.Debug.WriteLine("Movement started");
-                    MoveBallsAsync();
-                }
-                else
-                {
-                    System.Diagnostics.Debug.WriteLine("Movement stopped");
-                }
+                System.Diagnostics.Debug.WriteLine("Movement started");
+                MoveBallsAsync();
             }
-
-            private async void MoveBallsAsync()
+            else
             {
-                while (_isMoving)
-                {
-                    UpdateBallPositions();
-                    await Task.Delay(TimeSpan.FromMilliseconds(5));
-                }
+                System.Diagnostics.Debug.WriteLine("Movement stopped");
             }
+        }
 
-            private void UpdateBallPositions()
+        private async void MoveBallsAsync()
+        {
+            while (_isMoving)
             {
-                _ballService.UpdateBallPositions(0.010);
-
-                foreach (BallViewModel ballVM in Balls)
-                {
-                    ballVM.UpdatePosition(1);
-                }
+                UpdateBallPositions();
+                await Task.Delay(TimeSpan.FromMilliseconds(5));
             }
+        }
 
+        private void UpdateBallPositions()
+        {
+            _ballService.UpdateBallPositions(0.010);
+
+            foreach (BallViewModel ballVM in Balls)
+            {
+                ballVM.UpdatePosition(1);
+            }
+        }
 
         private double _canvasWidth;
         public double CanvasWidth

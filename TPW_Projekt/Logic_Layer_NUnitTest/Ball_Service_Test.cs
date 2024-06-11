@@ -1,26 +1,26 @@
 using Data_Layer;
 using Logic_Layer;
-using Logic_Layer.Interfaces;
 using NUnit.Framework;
+using System.Threading.Tasks;
 using System.Windows.Media;
-
-
 
 namespace Logic_Layer_Tests
 {
-
     [TestFixture]
     public class BallServiceTests
     {
-        public BallService _ballService;
-        public BallRepository _ballRepository = new BallRepository();
-        public Boundary _boundary = new Boundary(0,0,1000,1000, Colors.Red);
-
+        private BallService _ballService;
+        private BallRepository _ballRepository;
+        private Boundary _boundary;
+        private Logger _logger;
 
         [SetUp]
         public void Setup()
         {
-            _ballService = new BallService(_boundary, _ballRepository);
+            _boundary = new Boundary(0, 0, 1000, 1000, Colors.Red);
+            _ballRepository = new BallRepository();
+            _logger = new Logger();
+            _ballService = new BallService(_boundary, _ballRepository, _logger);
         }
 
         [Test]
@@ -29,16 +29,14 @@ namespace Logic_Layer_Tests
             var ball = _ballService.CreateBall();
 
             Assert.That(ball, Is.Not.Null);
-            Assert.That(ball.X, Is.InRange(0, _boundary.X + _boundary.Width));
-            Assert.That(ball.Y, Is.InRange(0, _boundary.Y + _boundary.Height));
+            Assert.That(ball.X, Is.InRange(_boundary.X, _boundary.X + _boundary.Width));
+            Assert.That(ball.Y, Is.InRange(_boundary.Y, _boundary.Y + _boundary.Height));
 
-            //Checke Velocity 
-
-            Assert.That(ball.VelocityX, Is.InRange(-1, 1));
-            Assert.That(ball.VelocityX, Is.InRange(-1, 1));
+            // Check Velocity
+            Assert.That(ball.VelocityX, Is.InRange(-1 / ball.Mass, 1 / ball.Mass));
+            Assert.That(ball.VelocityY, Is.InRange(-1 / ball.Mass, 1 / ball.Mass));
 
             Assert.That(_ballService.D_colors, Contains.Item(ball.Color));
-
         }
 
         [Test]
@@ -48,7 +46,7 @@ namespace Logic_Layer_Tests
             var initialX = ball.X;
             var initialY = ball.Y;
 
-            await _ballService.UpdateBallPositions(1); // Dodaj 'await' tutaj
+            await _ballService.UpdateBallPositions(1);
 
             // SprawdŸ, czy kula siê przemieœci³a
             Assert.That(ball.X, Is.Not.EqualTo(initialX));
@@ -56,7 +54,7 @@ namespace Logic_Layer_Tests
         }
 
         [Test]
-        public void BallCollision_Test()
+        public async Task BallCollision_Test()
         {
             // Utwórz dwie kule
             var ball1 = _ballService.CreateBall();
@@ -67,21 +65,20 @@ namespace Logic_Layer_Tests
             ball2.Y = ball1.Y;
 
             // Aktualizuj pozycje kul
-            _ballService.UpdateBallPositions(1);
+            await _ballService.UpdateBallPositions(1);
 
             // SprawdŸ, czy kule siê odbi³y (czyli czy ich prêdkoœci zmieni³y znak)
             Assert.That(ball1.VelocityX, Is.Not.EqualTo(ball2.VelocityX));
             Assert.That(ball1.VelocityY, Is.Not.EqualTo(ball2.VelocityY));
         }
 
-
         [Test]
-        public void CHeck_Ball_List()
+        public void Check_Ball_List()
         {
             var ball = _ballService.CreateBall();
-            var BallList = _ballRepository.balls;
+            var ballList = _ballRepository.GetAllBalls();
 
-            Assert.That(BallList.Count(), Is.GreaterThan(0));
+            Assert.That(ballList.Count, Is.GreaterThan(0));
         }
     }
 }
