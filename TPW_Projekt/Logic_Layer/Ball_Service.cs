@@ -11,6 +11,7 @@ public class BallService : IBallService
     private double _canvasHeight;
     private Boundary _boundary;
     private List<Task> _tasks = new List<Task>();
+    private DateTime _lastLogTime = DateTime.UtcNow;
 
     public Color[] D_colors = new Color[]
     {
@@ -98,7 +99,12 @@ public class BallService : IBallService
 
         await Task.WhenAll(_tasks);
 
-        // _logger.LogBalls(allBalls); // Logowanie kul po aktualizacji
+        // Logowanie stanu kul co okreœlony czas deltaT
+        if ((DateTime.UtcNow - _lastLogTime).TotalMilliseconds >= 2000) // deltaT = 1000 ms (1 sekunda)
+        {
+            _logger.LogBalls(allBalls);
+            _lastLogTime = DateTime.UtcNow;
+        }
 
         _isUpdating = false;
     }
@@ -126,13 +132,13 @@ public class BallService : IBallService
         if (ball.X - ball.Radius < _boundary.X || ball.X + ball.Radius > _boundary.X + _boundary.Width - 2 * margin)
         {
             ball.VelocityX = -ball.VelocityX;
-            _logger.Log($"WC VERTICAL -- Ball {ball.Id} bounced off the vertical wall at position ({ball.X}, {ball.Y}).");
+            _logger.Log($"Ball {ball.Id} bounced off the vertical wall at position ({ball.X}, {ball.Y}).");
         }
 
         if (ball.Y - ball.Radius < _boundary.Y || ball.Y + ball.Radius > _boundary.Y + _boundary.Height - 2 * margin)
         {
             ball.VelocityY = -ball.VelocityY;
-            _logger.Log($"WC HORIZONTAL -- Ball {ball.Id} bounced off the horizontal wall at position ({ball.X}, {ball.Y}).");
+            _logger.Log($"Ball {ball.Id} bounced off the horizontal wall at position ({ball.X}, {ball.Y}).");
         }
     }
 
@@ -178,7 +184,7 @@ public class BallService : IBallService
             ball2.X += overlap * nx;
             ball2.Y += overlap * ny;
 
-            _logger.Log($"BC -- Ball {ball1.Id} collided with Ball {ball2.Id} at position ({ball1.X}, {ball1.Y}).");
+            _logger.Log($"Ball {ball1.Id} collided with Ball {ball2.Id} at position ({ball1.X}, {ball1.Y}).");
         }
     }
 }

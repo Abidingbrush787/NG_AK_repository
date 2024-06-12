@@ -48,9 +48,11 @@ namespace Data_Layer_NUnitTest
             string logDirectory = Path.Combine(projectDirectory, "Logs");
             _logFilePath = Path.Combine(logDirectory, "log.txt");
 
-            Debug.WriteLine($"Path:{_logFilePath}");
+            Debug.WriteLine($"Path: {_logFilePath}");
         }
 
+
+        /*
         [TearDown]
         public void Cleanup()
         {
@@ -59,9 +61,10 @@ namespace Data_Layer_NUnitTest
                 File.Delete(_logFilePath);
             }
         }
+        */
 
         [Test]
-        public void Log_SingleMessage_Test()
+        public async Task Log_SingleMessage_Test()
         {
             // Arrange
             var message = "Test log message";
@@ -70,7 +73,7 @@ namespace Data_Layer_NUnitTest
             _logger.Log(message);
 
             // Allow some time for the async log to complete
-            Task.Delay(100).Wait();
+            await Task.Delay(100);
 
             // Assert
             Assert.IsTrue(File.Exists(_logFilePath));
@@ -79,20 +82,20 @@ namespace Data_Layer_NUnitTest
         }
 
         [Test]
-        public void LogBalls_Test()
+        public async Task LogBalls_Test()
         {
             // Arrange
             var balls = new List<Ball>
-            {
-                new Ball(0, 0, 1, 1, 10, Colors.Red, 1),
-                new Ball(10, 10, -1, -1, 10, Colors.Blue, 2)
-            };
+        {
+            new Ball(0, 0, 1, 1, 10, Colors.Red, 1),
+            new Ball(10, 10, -1, -1, 10, Colors.Blue, 2)
+        };
 
             // Act
             _logger.LogBalls(balls);
 
             // Allow some time for the async log to complete
-            Task.Delay(100).Wait();
+            await Task.Delay(100);
 
             // Assert
             Assert.IsTrue(File.Exists(_logFilePath));
@@ -109,5 +112,6 @@ namespace Data_Layer_NUnitTest
             }
         }
 
+       
     }
 }

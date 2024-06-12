@@ -62,31 +62,6 @@ namespace Data_Layer
             });
         }
 
-        public void LogEvent(string message, List<Ball> balls)
-        {
-            Task.Run(() =>
-            {
-                lock (_lock)
-                {
-                    try
-                    {
-                        var logEntry = new
-                        {
-                            Timestamp = DateTime.UtcNow,
-                            Event = message,
-                            Balls = balls
-                        };
-                        var json = JsonConvert.SerializeObject(logEntry, Formatting.Indented);
-                        File.AppendAllText(_filePath, json + Environment.NewLine);
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Exception during LogEvent: {ex.Message}");
-                    }
-                }
-            });
-        }
-
         public void Log(string message)
         {
             Task.Run(() =>
